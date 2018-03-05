@@ -217,9 +217,9 @@ def setLocation(object, context, seen, rot_changed):
         rotation = object.rotation * (1.0 + ratio) - driverrotation * ratio
         if object.name not in seen:
             if object.twin == 'Up':
-                offset += 1
+                offset += object.twinoffset
             elif object.twin == 'Down':
-                offset -= 1
+                offset -= object.twinoffset
 
             object.location = context.scene.objects[object.driver].location
             if object.twin == 'None':  # ! string not None object
@@ -444,6 +444,15 @@ bpy.types.Object.taper = FloatProperty(name="Taper",
                                               unit='ROTATION',
                                               update=updateMesh)
 
+bpy.types.Object.twinoffset = FloatProperty(name="Twin Offset",
+                                            description="Sets the offset from the twin",
+                                            default=1,
+                                            soft_min=1,
+                                            soft_max=40.0,
+                                            subtype='DISTANCE',
+                                            unit='LENGTH',
+                                            update=updateMesh)
+
 
 bpy.types.Object.driver = EnumProperty(items=availableGears, update=updateMesh)
 
@@ -536,6 +545,10 @@ class Gears(bpy.types.Panel):
                     col.prop(o, 'twin')
                     col.enabled = o.driver != ''
 
+                    col = layout.column()
+                    col.prop(o, 'twinoffset')
+                    col.enabled = o.twin != 'None'
+
                     layout.prop(o, 'driver')
                     layout.operator('mesh.gear2_add')
                 else:
@@ -564,6 +577,7 @@ class GearAdd(bpy.types.Operator):
             newgear = context.active_object
             newgear.driver = current.name
             newgear.reg = 'Gears'
+            updateMesh(newgear, context)
             bpy.ops.mesh.gear2_convert({
                 'object': newgear,
                 'active_object': newgear,
